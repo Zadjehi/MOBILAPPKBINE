@@ -1,15 +1,33 @@
 import { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Bouton, Chargeur } from '../composants/communs';
 import apiPublique from '../services/apiPublique';
 import { urlMedia } from '../utils/urlMedia';
-import { couleurs, espacements, taillesTexte } from '../constantes/theme';
+import { couleurs, espacements, taillesTexte, polices } from '../constantes/theme';
 
 // Port de frontend/src/pages/espace-client/index.js — écran d'accueil, fetch
 // /parametres/public pour le nom/logo/description du site, un seul bouton
 // vers l'écran Découvrir (pas d'inscription/connexion, pareil que le web
 // actuellement : masquées en attendant que ce parcours soit prêt).
 const TAGLINE_DEFAUT = 'Rechargez votre crédit Orange, Moov ou MTN à distance, payé via Wave ou Mobile Money.';
+
+// Dégradé identique à .app-ecran (frontend/src/styles/composants/_app-mobile.scss) :
+// linear-gradient(160deg, accent 0%, blanc 48%, blanc 52%, principal 100%).
+export function FondDegradeEcran({ children }) {
+  return (
+    <LinearGradient
+      colors={[couleurs.accent, couleurs.blanc, couleurs.blanc, couleurs.principal]}
+      locations={[0, 0.48, 0.52, 1]}
+      start={{ x: 0.2, y: 0 }}
+      end={{ x: 0.6, y: 1 }}
+      style={styles.ecran}
+    >
+      {children}
+    </LinearGradient>
+  );
+}
 
 export default function EspaceClientEcran({ navigation }) {
   const [parametres, setParametres] = useState(null);
@@ -26,17 +44,17 @@ export default function EspaceClientEcran({ navigation }) {
 
   if (chargement) {
     return (
-      <SafeAreaView style={styles.ecran}>
-        <View style={styles.centre}>
+      <FondDegradeEcran>
+        <SafeAreaView style={styles.centre}>
           <Chargeur taille="lg" />
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      </FondDegradeEcran>
     );
   }
 
   return (
-    <SafeAreaView style={styles.ecran}>
-      <View style={styles.contenu}>
+    <FondDegradeEcran>
+      <SafeAreaView style={styles.contenu}>
         {parametres?.logo ? (
           <Image source={{ uri: urlMedia(parametres.logo) }} style={styles.logo} resizeMode="contain" />
         ) : (
@@ -47,15 +65,14 @@ export default function EspaceClientEcran({ navigation }) {
         <Bouton variante="principal" taille="lg" style={styles.bouton} onPress={() => navigation.navigate('Decouvrir')}>
           Accéder au service
         </Bouton>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </FondDegradeEcran>
   );
 }
 
 const styles = StyleSheet.create({
   ecran: {
     flex: 1,
-    backgroundColor: couleurs.fond,
   },
   centre: {
     flex: 1,
@@ -75,12 +92,13 @@ const styles = StyleSheet.create({
     marginBottom: espacements[3],
   },
   logoTexte: {
-    fontSize: taillesTexte['3xl'],
-    fontWeight: '700',
+    fontFamily: polices.titre,
+    fontSize: taillesTexte['4xl'],
     color: couleurs.principal,
     marginBottom: espacements[3],
   },
   tagline: {
+    fontFamily: polices.corps,
     fontSize: taillesTexte.base,
     color: couleurs.texteSecondaire,
     textAlign: 'center',

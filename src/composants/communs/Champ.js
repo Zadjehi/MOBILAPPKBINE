@@ -1,11 +1,12 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { couleurs, espacements, rayons, taillesTexte } from '../../constantes/theme';
+import { couleurs, espacements, rayons, taillesTexte, polices } from '../../constantes/theme';
 
-// Port de frontend/src/composants/communs/Champ.js — mêmes noms de props côté
-// appelant (valeur, label, requis, desactive, erreur, aide), sauf onChange qui
-// devient onChangeText (TextInput RN renvoie directement la chaîne, pas un
-// événement) : chaque appel `onChange={e => setX(e.target.value)}` du web
-// devient `onChangeText={setX}` ici.
+// Port de frontend/src/composants/communs/Champ.js + _formulaires.scss
+// (%champ-base/.champ-texte). onChange devient onChangeText (TextInput RN
+// renvoie directement la chaîne, pas un événement) : chaque
+// `onChange={e => setX(e.target.value)}` du web devient `onChangeText={setX}`.
+// Vérifié dans le CSS réel : la bordure d'erreur utilise la couleur
+// SECONDAIRE (orange foncé), pas rouge.
 const CLAVIERS = {
   tel: 'phone-pad',
   number: 'numeric',
@@ -49,34 +50,37 @@ const styles = StyleSheet.create({
     marginBottom: espacements[2],
   },
   label: {
+    fontFamily: polices.corpsGras,
     fontSize: taillesTexte.sm,
-    fontWeight: '600',
     color: couleurs.texte,
     marginBottom: espacements[2],
   },
   champ: {
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: couleurs.bordure,
     borderRadius: rayons.md,
     paddingVertical: espacements[3],
     paddingHorizontal: espacements[4],
+    fontFamily: polices.corps,
     fontSize: taillesTexte.base,
     color: couleurs.texte,
     backgroundColor: couleurs.blanc,
   },
   champErreur: {
-    borderColor: couleurs.erreur,
+    borderColor: couleurs.secondaire,
   },
   champDesactive: {
-    backgroundColor: couleurs.grisClair,
+    backgroundColor: '#F8FAFC',
   },
   erreur: {
     marginTop: espacements[1],
+    fontFamily: polices.corps,
     fontSize: taillesTexte.xs,
-    color: couleurs.erreur,
+    color: couleurs.secondaire,
   },
   aide: {
     marginTop: espacements[1],
+    fontFamily: polices.corps,
     fontSize: taillesTexte.xs,
     color: couleurs.texteSecondaire,
   },

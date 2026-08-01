@@ -1,12 +1,14 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, Image, Pressable, ScrollView, StyleSheet, Linking, BackHandler } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Bouton, Champ, Alerte, Chargeur, Badge } from '../composants/communs';
 import apiPublique from '../services/apiPublique';
 import { LIBELLES_OPERATEUR, COULEURS_OPERATEUR, LIBELLES_CATEGORIE, LOGOS_OPERATEUR } from '../constantes/operateurs';
 import { calculerCommission, construireLienWave, formaterFcfa } from '../utils/commande';
 import { nettoyerChiffres, numeroValide, trouverIncoherenceOperateur } from '../utils/validation';
-import { couleurs, espacements, rayons, taillesTexte } from '../constantes/theme';
+import { couleurs, espacements, rayons, taillesTexte, polices } from '../constantes/theme';
+import { FondDegradeEcran } from './EspaceClientEcran';
 
 // Port de frontend/src/pages/espace-client/decouvrir.js — même machine à états
 // interne (etape/pile) qu'au web, un seul écran, pas de sous-navigation
@@ -180,7 +182,9 @@ export default function DecouvrirEcran({ navigation }) {
   const montantBase = typeService === 'transfert' ? montant : forfaitChoisi?.prix;
 
   return (
-    <ScrollView style={styles.ecran} contentContainerStyle={styles.scrollContenu}>
+    <FondDegradeEcran>
+      <SafeAreaView style={styles.ecran}>
+      <ScrollView contentContainerStyle={styles.scrollContenu}>
       {etape !== 'reseau' && etape !== 'recap' && (
         <Pressable onPress={retour} style={styles.retour}>
           <Text style={styles.retourTexte}>← Retour</Text>
@@ -418,14 +422,15 @@ export default function DecouvrirEcran({ navigation }) {
           )}
         </>
       )}
-    </ScrollView>
+      </ScrollView>
+      </SafeAreaView>
+    </FondDegradeEcran>
   );
 }
 
 const styles = StyleSheet.create({
   ecran: {
     flex: 1,
-    backgroundColor: couleurs.fond,
   },
   scrollContenu: {
     padding: espacements[6],
@@ -435,22 +440,24 @@ const styles = StyleSheet.create({
     marginBottom: espacements[4],
   },
   retourTexte: {
+    fontFamily: polices.corps,
     color: couleurs.texteSecondaire,
     fontSize: taillesTexte.sm,
   },
   etapeLabel: {
+    fontFamily: polices.corpsGras,
     fontSize: taillesTexte.xs,
     color: couleurs.texteSecondaire,
-    fontWeight: '700',
     marginBottom: espacements[2],
   },
   titre: {
+    fontFamily: polices.titre,
     fontSize: taillesTexte['2xl'],
-    fontWeight: '700',
-    color: couleurs.texte,
+    color: couleurs.principal,
     marginBottom: espacements[1],
   },
   sousTitre: {
+    fontFamily: polices.corps,
     fontSize: taillesTexte.sm,
     color: couleurs.texteSecondaire,
     marginBottom: espacements[5],
@@ -464,15 +471,15 @@ const styles = StyleSheet.create({
     gap: espacements[3],
     borderWidth: 1,
     borderColor: couleurs.bordure,
-    borderRadius: rayons.md,
-    padding: espacements[4],
+    borderRadius: rayons.lg,
+    padding: espacements[5],
     backgroundColor: couleurs.blanc,
   },
   carteTexte: {
     borderWidth: 1,
     borderColor: couleurs.bordure,
-    borderRadius: rayons.md,
-    padding: espacements[4],
+    borderRadius: rayons.lg,
+    padding: espacements[5],
     backgroundColor: couleurs.blanc,
   },
   carteForfait: {
@@ -485,21 +492,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   carteTitre: {
+    fontFamily: polices.corpsGras,
     fontSize: taillesTexte.base,
-    fontWeight: '700',
     color: couleurs.texte,
   },
   carteDescription: {
+    fontFamily: polices.corps,
     fontSize: taillesTexte.sm,
     color: couleurs.texteSecondaire,
     marginTop: espacements[1],
   },
   forfaitDetail: {
+    fontFamily: polices.corps,
     fontSize: taillesTexte.sm,
     color: couleurs.texte,
     marginTop: espacements[1],
   },
   forfaitDetailFaible: {
+    fontFamily: polices.corps,
     fontSize: taillesTexte.xs,
     color: couleurs.texteSecondaire,
     marginTop: espacements[1],
@@ -524,6 +534,7 @@ const styles = StyleSheet.create({
     marginTop: espacements[4],
   },
   notePetite: {
+    fontFamily: polices.corps,
     fontSize: taillesTexte.xs,
     color: couleurs.texteSecondaire,
     marginTop: espacements[3],
@@ -536,15 +547,16 @@ const styles = StyleSheet.create({
     borderBottomColor: couleurs.grisClair,
   },
   infoCle: {
+    fontFamily: polices.corps,
     fontSize: taillesTexte.sm,
     color: couleurs.texteSecondaire,
   },
   infoVal: {
+    fontFamily: polices.corpsGras,
     fontSize: taillesTexte.sm,
     color: couleurs.texte,
-    fontWeight: '600',
   },
   gras: {
-    fontWeight: '800',
+    fontFamily: polices.corpsGras,
   },
 });

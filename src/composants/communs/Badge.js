@@ -1,33 +1,34 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { couleurs, espacements, rayons, taillesTexte } from '../../constantes/theme';
+import { espacements, rayons, taillesTexte, polices } from '../../constantes/theme';
 
-// Port de frontend/src/composants/communs/Badge.js — mêmes props (variante,
-// enfants), sans "fermable" (non utilisé par les 2 écrans v1).
-const FONDS_VARIANTE = {
-  principal: couleurs.accent,
-  neutre: couleurs.grisClair,
+// Port de frontend/src/composants/communs/Badge.js + _badges.scss — vérifié
+// dans le CSS réel : "principal" est un fond TEINTÉ clair (pas un aplat
+// orange) avec texte et bordure de la même couleur PRINCIPALE (vert).
+const STYLES_VARIANTE = {
+  principal: { fond: 'rgba(15, 122, 61, 0.08)', texte: '#0F7A3D', bordure: 'rgba(15, 122, 61, 0.18)' },
+  neutre: { fond: '#F1F5F9', texte: '#475569', bordure: '#E2E8F0' },
 };
 
 export default function Badge({ variante = 'neutre', children }) {
-  const estNeutre = variante === 'neutre';
+  const s = STYLES_VARIANTE[variante] || STYLES_VARIANTE.neutre;
   return (
-    <View style={[styles.base, { backgroundColor: FONDS_VARIANTE[variante] || FONDS_VARIANTE.neutre }]}>
-      <Text style={[styles.texte, estNeutre ? { color: couleurs.texte } : { color: couleurs.blanc }]}>
-        {children}
-      </Text>
+    <View style={[styles.base, { backgroundColor: s.fond, borderColor: s.bordure }]}>
+      <Text style={[styles.texte, { color: s.texte }]}>{children}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
+    borderWidth: 1,
     borderRadius: rayons.rond,
-    paddingVertical: espacements[1],
+    paddingVertical: 3,
     paddingHorizontal: espacements[3],
     alignSelf: 'flex-start',
   },
   texte: {
+    fontFamily: polices.corpsGras,
     fontSize: taillesTexte.xs,
-    fontWeight: '700',
+    letterSpacing: 0.3,
   },
 });

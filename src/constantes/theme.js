@@ -46,4 +46,14 @@ export const taillesTexte = {
   xl: 20,
   '2xl': 24,
   '3xl': 30,
+  '4xl': 36,
+};
+
+// Noms de familles de police tels qu'exposés par @expo-google-fonts — chargées
+// dans App.js (useFonts). Mêmes polices que le web (frontend/src/pages/_document.js) :
+// Playfair Display pour les titres, Inter pour le corps de texte.
+export const polices = {
+  titre: 'PlayfairDisplay_700Bold',
+  corps: 'Inter_400Regular',
+  corpsGras: 'Inter_600SemiBold',
 };

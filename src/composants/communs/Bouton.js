@@ -1,15 +1,13 @@
 import { Pressable, Text, ActivityIndicator, StyleSheet } from 'react-native';
-import { couleurs, rayons, taillesTexte, espacements } from '../../constantes/theme';
+import { couleurs, rayons, taillesTexte, espacements, polices } from '../../constantes/theme';
 
-// Port de frontend/src/composants/communs/Bouton.js — mêmes noms de props
-// (variante, taille, chargement, desactive, onPress à la place de onClick),
-// sans la branche href/Link (aucun des 2 écrans v1 ne l'utilise).
-const FONDS_VARIANTE = {
-  principal: couleurs.accent,
-  secondaire: couleurs.secondaire,
-  danger: couleurs.erreur,
-};
-
+// Port de frontend/src/composants/communs/Bouton.js + frontend/src/styles/composants/_boutons.scss
+// (classe .btn--principal/.btn--outline) — mêmes noms de props (variante,
+// taille, chargement, desactive, onPress à la place de onClick).
+//
+// Important, vérifié dans le CSS réel (pas deviné) : .btn--principal a un
+// fond ACCENT (orange) mais un TEXTE PRINCIPAL (vert) — pas de texte blanc.
+// .btn--outline a une bordure ET un texte PRINCIPAL (vert), pas gris.
 export default function Bouton({
   variante = 'principal',
   taille = 'md',
@@ -20,7 +18,11 @@ export default function Bouton({
   children,
 }) {
   const estOutline = variante === 'outline';
+  const estDanger = variante === 'danger';
   const inactif = desactive || chargement;
+
+  const fond = estOutline ? 'transparent' : estDanger ? couleurs.secondaire : couleurs.accent;
+  const texte = estOutline || !estDanger ? couleurs.principal : couleurs.blanc;
 
   return (
     <Pressable
@@ -29,16 +31,17 @@ export default function Bouton({
       style={({ pressed }) => [
         styles.base,
         taille === 'lg' && styles.tailleLg,
-        estOutline ? styles.outline : { backgroundColor: FONDS_VARIANTE[variante] || couleurs.accent },
+        { backgroundColor: fond },
+        estOutline && { borderWidth: 2, borderColor: couleurs.principal },
         inactif && styles.desactive,
         pressed && !inactif && styles.pressed,
         style,
       ]}
     >
       {chargement ? (
-        <ActivityIndicator color={estOutline ? couleurs.accent : couleurs.blanc} size="small" />
+        <ActivityIndicator color={texte} size="small" />
       ) : (
-        <Text style={[styles.texte, estOutline && styles.texteOutline]}>{children}</Text>
+        <Text style={[styles.texte, { color: texte }]}>{children}</Text>
       )}
     </Pressable>
   );
@@ -48,32 +51,26 @@ const styles = StyleSheet.create({
   base: {
     borderRadius: rayons.md,
     paddingVertical: espacements[3],
-    paddingHorizontal: espacements[5],
+    paddingHorizontal: espacements[6],
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 44,
   },
   tailleLg: {
+    borderRadius: rayons.lg,
     paddingVertical: espacements[4],
+    paddingHorizontal: espacements[8],
     minHeight: 52,
   },
-  outline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: couleurs.bordure,
-  },
   desactive: {
-    opacity: 0.5,
+    opacity: 0.55,
   },
   pressed: {
     opacity: 0.85,
   },
   texte: {
-    color: couleurs.blanc,
-    fontSize: taillesTexte.base,
-    fontWeight: '600',
-  },
-  texteOutline: {
-    color: couleurs.texte,
+    fontFamily: polices.corpsGras,
+    fontSize: taillesTexte.sm,
+    letterSpacing: 0.3,
   },
 });

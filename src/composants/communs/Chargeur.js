@@ -1,12 +1,12 @@
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
-import { couleurs, espacements, taillesTexte } from '../../constantes/theme';
+import { couleurs, espacements, taillesTexte, polices } from '../../constantes/theme';
 
-// Port de frontend/src/composants/communs/Chargeur.js — mêmes props (taille,
-// libelle), enveloppe un ActivityIndicator natif.
+// Port de frontend/src/composants/communs/Chargeur.js + _divers.scss (.chargeur__cercle
+// tourne en couleur PRINCIPALE/vert, pas accent/orange — vérifié dans le CSS réel).
 export default function Chargeur({ taille = 'md', libelle = 'Chargement…' }) {
   return (
     <View style={styles.conteneur}>
-      <ActivityIndicator color={couleurs.accent} size={taille === 'lg' ? 'large' : 'small'} />
+      <ActivityIndicator color={couleurs.principal} size={taille === 'lg' ? 'large' : 'small'} />
       <Text style={styles.texte}>{libelle}</Text>
     </View>
   );
@@ -20,6 +20,7 @@ const styles = StyleSheet.create({
     gap: espacements[2],
   },
   texte: {
+    fontFamily: polices.corps,
     fontSize: taillesTexte.sm,
     color: couleurs.texteSecondaire,
   },
