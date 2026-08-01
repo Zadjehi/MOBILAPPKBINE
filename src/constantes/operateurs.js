@@ -5,10 +5,9 @@ export const COULEURS_OPERATEUR = { orange: '#FF7900', moov: '#0072CE', mtn: '#F
 export const LIBELLES_CATEGORIE = { internet: 'Internet', appel: 'Appel', sms: 'SMS', combo: 'Combo', autre: 'Autre' };
 
 // Logos bundlés localement (pas de dépendance réseau pour de la branding statique)
-// — voir frontend/src/utils/logosOperateurs.js. MTN n'a pas encore de logo, même
-// repli (cercle coloré) que le web dans ce cas.
+// — voir frontend/src/utils/logosOperateurs.js.
 export const LOGOS_OPERATEUR = {
   orange: require('../../assets/logos-operateurs/orange.jpg'),
   moov: require('../../assets/logos-operateurs/moov.jpg'),
-  mtn: null,
+  mtn: require('../../assets/logos-operateurs/mtn.png'),
 };
