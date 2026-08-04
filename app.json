@@ -2,6 +2,7 @@
   "expo": {
     "name": "Kbine",
     "slug": "kbine-mobile",
+    "owner": "the-moahe-group",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -24,6 +25,11 @@
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "97ec461f-a6fc-4487-b471-55e0c0a22cd6"
+      }
+    }
   }
 }
