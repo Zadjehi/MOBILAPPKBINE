@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Bouton, Champ, Alerte, Chargeur, Badge } from '../composants/communs';
 import apiPublique from '../services/apiPublique';
 import { LIBELLES_OPERATEUR, COULEURS_OPERATEUR, LIBELLES_CATEGORIE, LOGOS_OPERATEUR } from '../constantes/operateurs';
-import { calculerCommission, construireLienWave, formaterFcfa } from '../utils/commande';
+import { calculerCommission, formaterFcfa } from '../utils/commande';
 import { nettoyerChiffres, numeroValide, trouverIncoherenceOperateur } from '../utils/validation';
 import { couleurs, espacements, rayons, taillesTexte, polices } from '../constantes/theme';
 import { FondDegradeEcran } from './EspaceClientEcran';
@@ -40,18 +40,15 @@ export default function DecouvrirEcran({ navigation }) {
   const [chargementPaiement, setChargementPaiement] = useState(false);
   const [erreurPaiement, setErreurPaiement] = useState('');
   const [commandeCreee, setCommandeCreee] = useState(null);
-  const [numeroWave, setNumeroWave] = useState('');
-  const [waveLienBase, setWaveLienBase] = useState('');
+  const [lienPaiementCree, setLienPaiementCree] = useState(null);
 
   useEffect(() => {
     Promise.all([
       apiPublique.get('/catalogue/reseaux/public'),
       apiPublique.get('/catalogue/prefixes/public'),
-      apiPublique.get('/parametres/public'),
-    ]).then(([resReseaux, resPrefixes, resParametres]) => {
+    ]).then(([resReseaux, resPrefixes]) => {
       setReseaux(resReseaux.data.donnees?.reseaux || []);
       setPrefixes(resPrefixes.data.donnees?.prefixes || []);
-      setWaveLienBase(resParametres.data.donnees?.parametre?.wave_lien_base || '');
     }).catch(() => { setReseaux([]); setPrefixes([]); })
       .finally(() => setChargementInit(false));
   }, []);
@@ -121,14 +118,29 @@ export default function DecouvrirEcran({ navigation }) {
     aller('categorie');
   }
 
+  // PayDunya refuse toute facture sous 200 FCFA (frais inclus) — mieux vaut
+  // ne jamais montrer un forfait impossible à payer que laisser le client
+  // aller jusqu'au bout du parcours pour rien (voir aussi commandesControleur.
+  // creerDirect, même contrôle côté serveur).
+  const forfaitsAchetables = useMemo(
+    () => forfaitsOperateur.filter((f) => parseFloat(f.prix) + calculerCommission(f.prix) >= 200),
+    [forfaitsOperateur]
+  );
+
+  const montantTotalInsuffisant = useMemo(() => {
+    const m = parseFloat(montant);
+    if (!(m > 0)) return false;
+    return m + calculerCommission(m) < 200;
+  }, [montant]);
+
   const categoriesDisponibles = useMemo(() => {
-    const set = new Set(forfaitsOperateur.map((f) => f.categorie));
+    const set = new Set(forfaitsAchetables.map((f) => f.categorie));
     return Array.from(set);
-  }, [forfaitsOperateur]);
+  }, [forfaitsAchetables]);
 
   const forfaitsCategorie = useMemo(
-    () => forfaitsOperateur.filter((f) => f.categorie === categorie),
-    [forfaitsOperateur, categorie]
+    () => forfaitsAchetables.filter((f) => f.categorie === categorie),
+    [forfaitsAchetables, categorie]
   );
 
   function choisirCategorie(cat) {
@@ -147,34 +159,30 @@ export default function DecouvrirEcran({ navigation }) {
     setTypeService(''); setMontant('');
     setForfaitsOperateur([]); setCategorie(''); setForfaitChoisi(null);
     setChargementPaiement(false); setErreurPaiement(''); setCommandeCreee(null);
-    setNumeroWave('');
+    setLienPaiementCree(null);
   }
 
-  async function creerCommande() {
-    const chiffresWave = nettoyerChiffres(numeroWave);
-    if (!numeroValide(chiffresWave)) {
-      setErreurPaiement('Indiquez le numéro Wave (10 chiffres) que vous allez utiliser pour payer.');
-      return;
-    }
+  // La commande n'est enregistrée (et donc éligible au traitement automatique
+  // par le boîtier) qu'à ce moment précis — au clic sur "Payer", pas avant.
+  async function payerEtRediriger() {
     setChargementPaiement(true);
     setErreurPaiement('');
     try {
       const { data } = await apiPublique.post('/commandes/directe', {
         numeroTelephone: numero,
         operateur,
-        referencePaiement: numeroWave,
         ...(typeService === 'forfait' ? { forfaitId: forfaitChoisi?.id } : { montantCredit: montant }),
       });
-      setCommandeCreee(data.donnees.commande);
+      const commande = data.donnees.commande;
+      setCommandeCreee(commande);
+      const lien = data.donnees.lienPaiement || null;
+      setLienPaiementCree(lien);
+      if (lien) Linking.openURL(lien);
     } catch (err) {
       setErreurPaiement(err?.response?.data?.message || "Impossible d'enregistrer la commande pour le moment.");
     } finally {
       setChargementPaiement(false);
     }
-  }
-
-  function lienWave(montantAPayer) {
-    return construireLienWave(waveLienBase, montantAPayer);
   }
 
   const etapesBranche = typeService === 'forfait' ? ETAPES_FORFAIT : ETAPES_TRANSFERT;
@@ -259,9 +267,16 @@ export default function DecouvrirEcran({ navigation }) {
             <>
               <Text style={styles.titre}>Montant à envoyer</Text>
               <Champ type="number" label="Montant (FCFA)" valeur={montant} onChangeText={setMontant} placeholder="1000" requis />
+              {montantTotalInsuffisant ? (
+                <Alerte
+                  type="avertissement"
+                  message="Le montant total (frais de service inclus) doit être d'au moins 200 FCFA pour pouvoir être payé en ligne."
+                  style={styles.marginHaut}
+                />
+              ) : null}
               <Bouton
                 variante="principal" taille="lg" style={styles.boutonPleine}
-                desactive={!montant || parseFloat(montant) <= 0}
+                desactive={!montant || parseFloat(montant) <= 0 || montantTotalInsuffisant}
                 onPress={() => aller('recap')}
               >
                 Continuer
@@ -316,32 +331,23 @@ export default function DecouvrirEcran({ navigation }) {
                 <>
                   <Alerte
                     type="succes"
-                    message={`Commande #${commandeCreee.id} enregistrée — payez le montant ci-dessous via Wave pour que votre demande soit traitée.`}
+                    message={`Commande #${commandeCreee.id} enregistrée — vous avez été redirigé vers la page de paiement pour régler ${formaterFcfa(commandeCreee.montant_total)} FCFA.`}
                   />
                   <View style={[styles.carteTexte, styles.marginHaut]}>
                     <View style={styles.ligneInfo}>
                       <Text style={styles.infoCle}>Montant à payer</Text>
                       <Text style={styles.infoVal}>{formaterFcfa(commandeCreee.montant_total)} FCFA</Text>
                     </View>
-                    <View style={styles.ligneInfo}>
-                      <Text style={styles.infoCle}>Numéro Wave</Text>
-                      <Text style={styles.infoVal}>{numeroWave}</Text>
-                    </View>
                   </View>
 
-                  {lienWave(commandeCreee.montant_total) ? (
-                    <Bouton
-                      variante="principal" taille="lg" style={styles.boutonPleine}
-                      onPress={() => Linking.openURL(lienWave(commandeCreee.montant_total))}
-                    >
-                      Payer {formaterFcfa(commandeCreee.montant_total)} FCFA via Wave
-                    </Bouton>
+                  {lienPaiementCree ? (
+                    <Text style={styles.notePetite}>
+                      La page de paiement ne s'est pas ouverte ?{' '}
+                      <Text style={styles.lienTexte} onPress={() => Linking.openURL(lienPaiementCree)}>Appuyez ici</Text>.
+                    </Text>
                   ) : (
-                    <Alerte type="avertissement" message="Le paiement Wave n'est pas encore configuré — contactez-nous pour finaliser cette commande." style={styles.marginHaut} />
+                    <Alerte type="avertissement" message="Le paiement en ligne n'est pas encore configuré — contactez-nous pour finaliser cette commande." style={styles.marginHaut} />
                   )}
-                  <Text style={styles.notePetite}>
-                    Le montant est déjà pré-rempli dans Wave — payez avec le numéro {numeroWave} pour que votre commande soit reconnue rapidement.
-                  </Text>
 
                   <Bouton variante="outline" style={styles.boutonPleineMarge} onPress={recommencer}>
                     Nouvelle demande
@@ -398,19 +404,12 @@ export default function DecouvrirEcran({ navigation }) {
                       </Text>
                     </View>
                   </View>
-                  <Text style={styles.notePetite}>Kbine ajoute 2 FCFA + 1% du montant en frais de service par opération.</Text>
-
-                  <View style={styles.marginHaut}>
-                    <Champ
-                      type="tel" label="Votre numéro Wave" valeur={numeroWave} onChangeText={setNumeroWave}
-                      placeholder="07 00 00 00 00" requis aide="Le numéro que vous allez utiliser pour payer sur Wave."
-                    />
-                  </View>
+                  <Text style={styles.notePetite}>Kbine ajoute 2 FCFA + 2,5% du montant en frais de service par opération.</Text>
 
                   {erreurPaiement ? <Alerte type="erreur" message={erreurPaiement} style={styles.marginHaut} /> : null}
 
-                  <Bouton variante="principal" taille="lg" style={styles.boutonPleine} chargement={chargementPaiement} onPress={creerCommande}>
-                    Continuer vers le paiement
+                  <Bouton variante="principal" taille="lg" style={styles.boutonPleine} chargement={chargementPaiement} onPress={payerEtRediriger}>
+                    Payer {formaterFcfa((parseFloat(montantBase) || 0) + calculerCommission(montantBase))} FCFA
                   </Bouton>
 
                   <Bouton variante="outline" style={styles.boutonPleineMarge} onPress={recommencer}>
@@ -538,6 +537,10 @@ const styles = StyleSheet.create({
     fontSize: taillesTexte.xs,
     color: couleurs.texteSecondaire,
     marginTop: espacements[3],
+  },
+  lienTexte: {
+    color: couleurs.principal,
+    textDecorationLine: 'underline',
   },
   ligneInfo: {
     flexDirection: 'row',

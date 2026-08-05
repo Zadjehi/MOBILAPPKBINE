@@ -11,7 +11,7 @@ import { couleurs, espacements, taillesTexte, polices } from '../constantes/them
 // /parametres/public pour le nom/logo/description du site, un seul bouton
 // vers l'écran Découvrir (pas d'inscription/connexion, pareil que le web
 // actuellement : masquées en attendant que ce parcours soit prêt).
-const TAGLINE_DEFAUT = 'Rechargez votre crédit Orange, Moov ou MTN à distance, payé via Wave ou Mobile Money.';
+const TAGLINE_DEFAUT = 'Rechargez votre crédit Orange, Moov ou MTN à distance, en ligne.';
 
 // Dégradé identique à .app-ecran (frontend/src/styles/composants/_app-mobile.scss) :
 // linear-gradient(160deg, accent 0%, blanc 48%, blanc 52%, principal 100%).
