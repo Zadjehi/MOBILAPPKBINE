@@ -13,10 +13,13 @@ expo-env.d.ts
 .kotlin/
 *.orig.*
 *.jks
+*.keystore
 *.p8
 *.p12
 *.key
 *.mobileprovision
+keystore/
+android/keystore.properties
 
 # Metro
 .metro-health-check*
@@ -40,6 +43,17 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-# generated native folders
+# iOS pas construit pour l'instant (pas de compte Apple Developer) — /android
+# n'est PLUS ignore : depuis qu'on ne passe plus par EAS Build, ce dossier est
+# la source de verite du projet natif (comme un projet Android Studio classique,
+# genere une seule fois par expo prebuild puis maintenu directement).
 /ios
-/android
+
+# Artefacts de build Android (regeneres a chaque compilation, jamais a committer)
+android/.gradle/
+android/.idea/
+android/*.iml
+android/app/.cxx/
+android/app/build/
+android/build/
+android/local.properties
