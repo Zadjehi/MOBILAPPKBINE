@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Kbine",
+    "name": "MyKbine",
     "slug": "kbine-mobile",
     "owner": "the-moahe-group",
     "version": "1.0.0",
@@ -14,7 +14,7 @@
     "android": {
       "package": "com.kbine.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
