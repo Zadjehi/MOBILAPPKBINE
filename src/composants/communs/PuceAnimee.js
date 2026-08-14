@@ -7,12 +7,16 @@ import { couleurs } from '../../constantes/theme';
 // équivalent Kbine de la voiture animée sur le site de référence cité par
 // l'utilisateur (terminal-industries.com) : un objet qui représente
 // concrètement ce que fait le service (recharger une puce), pas juste une
-// décoration. Réutilisée à deux endroits avec un comportement différent :
-//   - variante="hero"        : boucle d'ambiance (flotte + respire) — écran
-//     d'accueil ET Chargeur (voir ces deux fichiers).
+// décoration.
+//   - variante="hero"        : boucle d'ambiance (flotte + respire) —
+//     disponible mais plus utilisée sur l'accueil (faisait doublon avec le
+//     vrai logo Kbine, voir EspaceClientEcran — retiré le 14/08/2026).
 //   - variante="progression" : suit une étape précise du parcours d'achat
 //     (etape/total) — se remplit au fur et à mesure, bascule en "succès"
 //     (coche + halo) sur la dernière étape. Voir DecouvrirEcran.
+//   - variante="chargement"  : la puce se remplit et se vide en boucle
+//     automatique (pas pilotée par etape/total, contrairement à
+//     "progression") — remplace l'ActivityIndicator générique de Chargeur.js.
 //
 // Construite en SVG pur (react-native-svg) plutôt qu'en Views empilées : la
 // silhouette réelle d'une puce SIM (un coin coupé en diagonal, pas juste des
@@ -94,6 +98,20 @@ export default function PuceAnimee({
     }
   }, [variante, etape, total, remplissage, succes]);
 
+  // Chargement générique : la puce se remplit puis se vide en boucle, sans
+  // lien avec une vraie progression — juste un signe de vie pendant l'attente.
+  useEffect(() => {
+    if (variante !== 'chargement') return;
+    const boucle = Animated.loop(
+      Animated.sequence([
+        Animated.timing(remplissage, { toValue: 1, duration: 1100, useNativeDriver: false }),
+        Animated.timing(remplissage, { toValue: 0, duration: 500, useNativeDriver: false }),
+      ])
+    );
+    boucle.start();
+    return () => boucle.stop();
+  }, [variante, remplissage]);
+
   const translateY = flotte.interpolate({ inputRange: [0, 1], outputRange: [0, -8] });
   const scaleRespire = respire.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] });
   const hauteurRemplie = remplissage.interpolate({ inputRange: [0, 1], outputRange: [0, HAUTEUR] });
@@ -127,13 +145,14 @@ export default function PuceAnimee({
           </ClipPath>
         </Defs>
 
-        {/* Fond de la puce : plein pour "hero", grisé pour "progression" tant que le remplissage ne l'a pas atteint */}
+        {/* Fond de la puce : plein pour "hero", grisé pour "progression"/"chargement"
+            (le remplissage animé prend le relais par-dessus, voir juste en-dessous) */}
         <Path
           d={CONTOUR_PUCE}
           fill={variante === 'hero' ? 'url(#degradePuce)' : 'url(#degradePuceInactive)'}
         />
 
-        {variante === 'progression' && (
+        {(variante === 'progression' || variante === 'chargement') && (
           <AnimatedRect x={0} y={yRemplie} width={LARGEUR} height={hauteurRemplie} fill="url(#degradePuce)" clipPath="url(#clipPuce)" />
         )}
 

@@ -9,7 +9,7 @@ import { couleurs, espacements, taillesTexte, polices } from '../../constantes/t
 export default function Chargeur({ taille = 'md', libelle = 'Chargement…' }) {
   return (
     <View style={styles.conteneur}>
-      <PuceAnimee variante="hero" taille={taille === 'lg' ? 90 : 56} />
+      <PuceAnimee variante="chargement" taille={taille === 'lg' ? 90 : 56} />
       <Text style={styles.texte}>{libelle}</Text>
     </View>
   );
