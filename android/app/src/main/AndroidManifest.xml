@@ -1,9 +1,20 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+  <!-- READ/WRITE_EXTERNAL_STORAGE, SYSTEM_ALERT_WINDOW et VIBRATE retirées
+       (14/08/2026) : héritées du modèle par défaut d'Expo lors de la génération
+       du projet natif (commit 740c98a), jamais réellement utilisées par cette
+       appli (aucun accès fichier, aucun overlay, aucune vibration dans le code —
+       vérifié) — SYSTEM_ALERT_WINDOW en particulier attire une vraie attention en
+       review Google Play, inutile de la garder sans raison. Seul INTERNET est
+       réellement nécessaire (appels API). -->
   <uses-permission android:name="android.permission.INTERNET"/>
-  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
-  <uses-permission android:name="android.permission.VIBRATE"/>
-  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+  <!-- READ/WRITE_EXTERNAL_STORAGE reviennent quand même dans le manifest fusionné
+       final (vérifié via manifest-merger-blame-release-report.txt) : injectées par
+       expo-modules-filesystem, une dépendance TRANSITIVE (jamais importée par le
+       code JS de cette appli) tirée automatiquement par le SDK Expo. tools:node="remove"
+       force leur suppression du manifest final malgré cet ajout automatique — la
+       seule façon fiable de s'en débarrasser sans toucher aux dépendances Expo. -->
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove"/>
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove"/>
   <queries>
     <intent>
       <action android:name="android.intent.action.VIEW"/>
