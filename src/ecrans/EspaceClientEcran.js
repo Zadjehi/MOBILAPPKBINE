@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Bouton, Chargeur } from '../composants/communs';
+import { Bouton, Chargeur, PuceAnimee } from '../composants/communs';
 import apiPublique from '../services/apiPublique';
 import { urlMedia } from '../utils/urlMedia';
 import { couleurs, espacements, taillesTexte, polices } from '../constantes/theme';
@@ -55,6 +55,7 @@ export default function EspaceClientEcran({ navigation }) {
   return (
     <FondDegradeEcran>
       <SafeAreaView style={styles.contenu}>
+        <PuceAnimee variante="hero" taille={130} style={styles.puceHero} />
         {parametres?.logo ? (
           <Image source={{ uri: urlMedia(parametres.logo) }} style={styles.logo} resizeMode="contain" />
         ) : (
@@ -84,6 +85,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: espacements[6],
+  },
+  puceHero: {
+    marginBottom: espacements[6],
   },
   logo: {
     width: '100%',

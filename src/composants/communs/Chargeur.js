@@ -1,12 +1,15 @@
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import PuceAnimee from './PuceAnimee';
 import { couleurs, espacements, taillesTexte, polices } from '../../constantes/theme';
 
-// Port de frontend/src/composants/communs/Chargeur.js + _divers.scss (.chargeur__cercle
-// tourne en couleur PRINCIPALE/vert, pas accent/orange — vérifié dans le CSS réel).
+// Reprend l'illustration héro (PuceAnimee, voir ce fichier) plutôt qu'un
+// simple ActivityIndicator système — un chargement Kbine doit évoquer une
+// puce qui "prend vie", cohérent avec l'accueil et le parcours d'achat, pas
+// un rond générique identique à n'importe quelle autre appli.
 export default function Chargeur({ taille = 'md', libelle = 'Chargement…' }) {
   return (
     <View style={styles.conteneur}>
-      <ActivityIndicator color={couleurs.principal} size={taille === 'lg' ? 'large' : 'small'} />
+      <PuceAnimee variante="hero" taille={taille === 'lg' ? 90 : 56} />
       <Text style={styles.texte}>{libelle}</Text>
     </View>
   );

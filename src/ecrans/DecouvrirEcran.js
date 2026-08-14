@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, Image, Pressable, ScrollView, StyleSheet, Linking, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Bouton, Champ, Alerte, Chargeur, Badge } from '../composants/communs';
+import { Bouton, Champ, Alerte, Chargeur, Badge, PuceAnimee, CartePressable } from '../composants/communs';
 import apiPublique from '../services/apiPublique';
 import { LIBELLES_OPERATEUR, COULEURS_OPERATEUR, LIBELLES_CATEGORIE, LOGOS_OPERATEUR } from '../constantes/operateurs';
 import { calculerCommission, formaterFcfa } from '../utils/commande';
@@ -189,6 +189,15 @@ export default function DecouvrirEcran({ navigation }) {
   const positionEtape = etapesBranche.indexOf(etape) + 1;
   const montantBase = typeService === 'transfert' ? montant : forfaitChoisi?.prix;
 
+  // La puce animée suit le parcours : elle se remplit au fil des étapes,
+  // reste "presque pleine" (pas encore le check de succès) tant qu'on est sur
+  // le récap SANS paiement confirmé, et n'atteint le vrai 100% + coche qu'une
+  // fois la commande réellement enregistrée (commandeCreee) — pas juste
+  // parce qu'on a atteint la dernière étape de l'assistant.
+  const etapePourPuce = etape === 'recap' && !commandeCreee
+    ? etapesBranche.length - 0.5
+    : positionEtape;
+
   return (
     <FondDegradeEcran>
       <SafeAreaView style={styles.ecran}>
@@ -204,8 +213,13 @@ export default function DecouvrirEcran({ navigation }) {
         </Pressable>
       )}
 
-      {etape !== 'recap' && positionEtape > 0 && (
-        <Text style={styles.etapeLabel}>ÉTAPE {positionEtape} / {etapesBranche.length}</Text>
+      {positionEtape > 0 && (
+        <View style={styles.blocPuce}>
+          <PuceAnimee variante="progression" etape={etapePourPuce} total={etapesBranche.length} taille={72} />
+          {etape !== 'recap' && (
+            <Text style={styles.etapeLabel}>ÉTAPE {positionEtape} / {etapesBranche.length}</Text>
+          )}
+        </View>
       )}
 
       {chargementInit ? (
@@ -221,14 +235,14 @@ export default function DecouvrirEcran({ navigation }) {
               ) : (
                 <View style={styles.liste}>
                   {reseaux.map((op) => (
-                    <Pressable key={op} onPress={() => choisirReseau(op)} style={styles.carte}>
+                    <CartePressable key={op} onPress={() => choisirReseau(op)} style={styles.carte}>
                       {LOGOS_OPERATEUR[op] ? (
                         <Image source={LOGOS_OPERATEUR[op]} style={styles.logoOperateur} />
                       ) : (
                         <View style={[styles.logoOperateur, { backgroundColor: COULEURS_OPERATEUR[op] }]} />
                       )}
                       <Text style={styles.carteTitre}>{LIBELLES_OPERATEUR[op] || op}</Text>
-                    </Pressable>
+                    </CartePressable>
                   ))}
                 </View>
               )}
@@ -251,14 +265,14 @@ export default function DecouvrirEcran({ navigation }) {
             <>
               <Text style={styles.titre}>Que voulez-vous faire ?</Text>
               <View style={styles.liste}>
-                <Pressable onPress={() => choisirTypeService('transfert')} style={styles.carteTexte}>
+                <CartePressable onPress={() => choisirTypeService('transfert')} style={styles.carteTexte}>
                   <Text style={styles.carteTitre}>Transfert direct de crédit</Text>
                   <Text style={styles.carteDescription}>Envoyer un montant libre de crédit.</Text>
-                </Pressable>
-                <Pressable onPress={() => choisirTypeService('forfait')} style={styles.carteTexte}>
+                </CartePressable>
+                <CartePressable onPress={() => choisirTypeService('forfait')} style={styles.carteTexte}>
                   <Text style={styles.carteTitre}>Achat d'un forfait</Text>
                   <Text style={styles.carteDescription}>Internet, appel, SMS ou combo.</Text>
-                </Pressable>
+                </CartePressable>
               </View>
             </>
           )}
@@ -294,9 +308,9 @@ export default function DecouvrirEcran({ navigation }) {
               ) : (
                 <View style={styles.liste}>
                   {categoriesDisponibles.map((cat) => (
-                    <Pressable key={cat} onPress={() => choisirCategorie(cat)} style={styles.carteTexte}>
+                    <CartePressable key={cat} onPress={() => choisirCategorie(cat)} style={styles.carteTexte}>
                       <Text style={styles.carteTitre}>{LIBELLES_CATEGORIE[cat] || cat}</Text>
-                    </Pressable>
+                    </CartePressable>
                   ))}
                 </View>
               )}
@@ -308,7 +322,7 @@ export default function DecouvrirEcran({ navigation }) {
               <Text style={styles.titre}>{LIBELLES_CATEGORIE[categorie]} — {LIBELLES_OPERATEUR[operateur]}</Text>
               <View style={styles.liste}>
                 {forfaitsCategorie.map((f) => (
-                  <Pressable key={f.id} onPress={() => choisirForfait(f)} style={[styles.carteTexte, styles.carteForfait]}>
+                  <CartePressable key={f.id} onPress={() => choisirForfait(f)} style={[styles.carteTexte, styles.carteForfait]}>
                     <View style={styles.forfaitInfos}>
                       <Text style={styles.carteTitre}>{f.nom}</Text>
                       {f.description ? <Text style={styles.forfaitDetail}>{f.description}</Text> : null}
@@ -317,7 +331,7 @@ export default function DecouvrirEcran({ navigation }) {
                       ) : null}
                     </View>
                     <Badge variante="principal">{formaterFcfa(f.prix)} FCFA</Badge>
-                  </Pressable>
+                  </CartePressable>
                 ))}
               </View>
             </>
@@ -442,6 +456,11 @@ const styles = StyleSheet.create({
     fontFamily: polices.corps,
     color: couleurs.texteSecondaire,
     fontSize: taillesTexte.sm,
+  },
+  blocPuce: {
+    alignItems: 'center',
+    marginBottom: espacements[4],
+    gap: espacements[2],
   },
   etapeLabel: {
     fontFamily: polices.corpsGras,
