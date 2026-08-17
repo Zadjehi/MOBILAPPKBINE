@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet } from 'react-native';
 import Svg, { Path, Rect, Line, G, Defs, LinearGradient, Stop, ClipPath } from 'react-native-svg';
 import { couleurs } from '../../constantes/theme';
@@ -22,9 +22,17 @@ import { couleurs } from '../../constantes/theme';
 // silhouette réelle d'une puce SIM (un coin coupé en diagonal, pas juste des
 // coins arrondis) n'est pas faisable proprement avec les seuls angles de
 // bordure de React Native.
-const AnimatedRect = Animated.createAnimatedComponent(Rect);
-const AnimatedG = Animated.createAnimatedComponent(G);
-
+//
+// BUG CORRIGÉ (plantage réel à l'ouverture de Découvrir, 14/08/2026) :
+// animer des composants SVG natifs (Rect/G de react-native-svg) via
+// Animated.createAnimatedComponent — en particulier une CHAÎNE interpolée
+// pour l'attribut "transform" du groupe de succès — plantait l'appli au
+// runtime malgré un bundle Metro qui compilait sans erreur. Remplacé par un
+// écouteur (addListener) qui synchronise la valeur animée vers un état React
+// classique, puis passe des props NORMALES (jamais enveloppées par
+// Animated.createAnimatedComponent) aux composants SVG. Moins optimisé (pas
+// de pilotage natif pour ce remplissage) mais fiable — seul Animated.View
+// (composant RN standard, pas un élément SVG) reste piloté par Animated ici.
 const LARGEUR = 100;
 const HAUTEUR = 130;
 const RAYON = 14;
@@ -57,9 +65,23 @@ export default function PuceAnimee({
   const remplissage = useRef(new Animated.Value(0)).current;
   const succes = useRef(new Animated.Value(0)).current;
 
+  const [hauteurRemplie, setHauteurRemplie] = useState(0);
+  const [succesRatio, setSuccesRatio] = useState(0);
+
+  useEffect(() => {
+    const id = remplissage.addListener(({ value }) => setHauteurRemplie(value * HAUTEUR));
+    return () => remplissage.removeListener(id);
+  }, [remplissage]);
+
+  useEffect(() => {
+    const id = succes.addListener(({ value }) => setSuccesRatio(value));
+    return () => succes.removeListener(id);
+  }, [succes]);
+
   // Boucle d'ambiance : flottement vertical léger + respiration d'échelle,
   // continue tant que le composant est monté — c'est elle qui donne
-  // l'impression "vivante" demandée, pas une simple icône statique.
+  // l'impression "vivante" demandée, pas une simple icône statique. Pilote
+  // uniquement Animated.View (composant RN standard) : native driver sûr.
   useEffect(() => {
     const boucleFlotte = Animated.loop(
       Animated.sequence([
@@ -86,13 +108,9 @@ export default function PuceAnimee({
   useEffect(() => {
     if (variante !== 'progression') return;
     const ratio = total > 0 ? Math.min(etape / total, 1) : 0;
-    Animated.timing(remplissage, {
-      toValue: ratio,
-      duration: 600,
-      useNativeDriver: false, // hauteur/position SVG : pas de pilotage natif possible ici
-    }).start();
+    Animated.timing(remplissage, { toValue: ratio, duration: 600, useNativeDriver: false }).start();
     if (ratio >= 1) {
-      Animated.spring(succes, { toValue: 1, friction: 4, useNativeDriver: true }).start();
+      Animated.spring(succes, { toValue: 1, friction: 4, useNativeDriver: false }).start();
     } else {
       succes.setValue(0);
     }
@@ -114,8 +132,8 @@ export default function PuceAnimee({
 
   const translateY = flotte.interpolate({ inputRange: [0, 1], outputRange: [0, -8] });
   const scaleRespire = respire.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] });
-  const hauteurRemplie = remplissage.interpolate({ inputRange: [0, 1], outputRange: [0, HAUTEUR] });
-  const yRemplie = remplissage.interpolate({ inputRange: [0, 1], outputRange: [HAUTEUR, 0] });
+  const yRemplie = HAUTEUR - hauteurRemplie;
+  const echelleSucces = 0.5 + succesRatio * 0.5;
 
   return (
     <Animated.View
@@ -146,14 +164,14 @@ export default function PuceAnimee({
         </Defs>
 
         {/* Fond de la puce : plein pour "hero", grisé pour "progression"/"chargement"
-            (le remplissage animé prend le relais par-dessus, voir juste en-dessous) */}
+            (le remplissage prend le relais par-dessus, voir juste en-dessous) */}
         <Path
           d={CONTOUR_PUCE}
           fill={variante === 'hero' ? 'url(#degradePuce)' : 'url(#degradePuceInactive)'}
         />
 
         {(variante === 'progression' || variante === 'chargement') && (
-          <AnimatedRect x={0} y={yRemplie} width={LARGEUR} height={hauteurRemplie} fill="url(#degradePuce)" clipPath="url(#clipPuce)" />
+          <Rect x={0} y={yRemplie} width={LARGEUR} height={hauteurRemplie} fill="url(#degradePuce)" clipPath="url(#clipPuce)" />
         )}
 
         {/* Puce à contacts (le petit rectangle doré typique d'une carte SIM) */}
@@ -162,16 +180,11 @@ export default function PuceAnimee({
         <Line x1={16} y1={54} x2={58} y2={54} stroke="#8A6D2E" strokeWidth={1} opacity={0.6} />
         <Line x1={37} y1={34} x2={37} y2={64} stroke="#8A6D2E" strokeWidth={1} opacity={0.6} />
 
-        {/* Coche de succès — n'apparaît qu'à la toute dernière étape. Groupe SVG
-            animé (pas une View/Svg imbriquée : invalide dans l'arbre react-native-svg,
-            les enfants d'un <Svg> doivent tous être des éléments SVG). */}
+        {/* Coche de succès — n'apparaît qu'à la toute dernière étape */}
         {variante === 'progression' && (
-          <AnimatedG
-            opacity={succes}
-            transform={succes.interpolate({
-              inputRange: [0, 1],
-              outputRange: [`translate(${LARGEUR / 2}, ${HAUTEUR / 2}) scale(0.5) translate(${-LARGEUR / 2}, ${-HAUTEUR / 2})`, `translate(${LARGEUR / 2}, ${HAUTEUR / 2}) scale(1) translate(${-LARGEUR / 2}, ${-HAUTEUR / 2})`],
-            })}
+          <G
+            opacity={succesRatio}
+            transform={`translate(${LARGEUR / 2}, ${HAUTEUR / 2}) scale(${echelleSucces}) translate(${-LARGEUR / 2}, ${-HAUTEUR / 2})`}
           >
             <Rect x={2} y={2} width={LARGEUR - 4} height={HAUTEUR - 4} rx={RAYON} fill={couleurs.succes} opacity={0.18} />
             <Path
@@ -182,7 +195,7 @@ export default function PuceAnimee({
               strokeLinejoin="round"
               fill="none"
             />
-          </AnimatedG>
+          </G>
         )}
       </Svg>
     </Animated.View>
