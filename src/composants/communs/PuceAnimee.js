@@ -122,8 +122,8 @@ export default function PuceAnimee({
     if (variante !== 'chargement') return;
     const boucle = Animated.loop(
       Animated.sequence([
-        Animated.timing(remplissage, { toValue: 1, duration: 1100, useNativeDriver: false }),
-        Animated.timing(remplissage, { toValue: 0, duration: 500, useNativeDriver: false }),
+        Animated.timing(remplissage, { toValue: 1, duration: 2200, useNativeDriver: false }),
+        Animated.timing(remplissage, { toValue: 0, duration: 1000, useNativeDriver: false }),
       ])
     );
     boucle.start();
