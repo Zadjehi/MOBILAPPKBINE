@@ -1,7 +1,7 @@
-// Couleurs/espacements portés de frontend/src/styles/_variables.scss — ce sont des
-// valeurs PLACEHOLDER (héritées d'un socle technique, pas encore la charte Kbine
-// définitive), à garder synchronisées avec le web si elles changent avant
-// validation de la charte réelle.
+// Couleurs/espacements portés de frontend/src/styles/_variables.scss — charte
+// graphique VALIDÉE et définitive (confirmé le 18/09/2026, voir CLAUDE.md) :
+// vert/orange évoquant les couleurs du drapeau ivoirien. Garder synchronisé
+// avec le web si ces valeurs changent un jour.
 export const couleurs = {
   principal: '#0F7A3D',
   secondaire: '#C2410C',
