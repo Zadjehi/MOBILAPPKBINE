@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, Image, Pressable, ScrollView, StyleSheet, Linking, BackHandler } from 'react-native';
+import { View, Text, Image, Pressable, ScrollView, StyleSheet, Linking, BackHandler, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Bouton, Champ, Alerte, Chargeur, Badge, PuceAnimee, CartePressable } from '../composants/communs';
@@ -177,7 +177,15 @@ export default function DecouvrirEcran({ navigation }) {
       setCommandeCreee(commande);
       const lien = data.donnees.lienPaiement || null;
       setLienPaiementCree(lien);
-      if (lien) Linking.openURL(lien);
+      // Rejet non intercepté jusqu'ici (ex. aucune appli capable d'ouvrir un
+      // lien https sur l'appareil — rare mais déjà vu sur certains Android
+      // reconditionnés). Pas besoin d'afficher une erreur en plus : le lien
+      // "Appuyez ici" (voir plus bas, affiché dès que lienPaiementCree est
+      // renseigné) sert déjà de repli manuel dans ce cas précis — juste
+      // éviter le rejet de promesse non intercepté.
+      if (lien) {
+        Linking.openURL(lien).catch(() => {});
+      }
     } catch (err) {
       setErreurPaiement(err?.response?.data?.message || "Impossible d'enregistrer la commande pour le moment.");
     } finally {
@@ -280,7 +288,11 @@ export default function DecouvrirEcran({ navigation }) {
           {etape === 'montant' && (
             <>
               <Text style={styles.titre}>Montant à envoyer</Text>
-              <Champ type="number" label="Montant (FCFA)" valeur={montant} onChangeText={setMontant} placeholder="1000" requis />
+              <Champ
+                type="number" label="Montant (FCFA)" valeur={montant}
+                onChangeText={(texte) => setMontant(nettoyerChiffres(texte))}
+                placeholder="1000" requis
+              />
               {montantTotalInsuffisant ? (
                 <Alerte
                   type="avertissement"
@@ -357,7 +369,20 @@ export default function DecouvrirEcran({ navigation }) {
                   {lienPaiementCree ? (
                     <Text style={styles.notePetite}>
                       La page de paiement ne s'est pas ouverte ?{' '}
-                      <Text style={styles.lienTexte} onPress={() => Linking.openURL(lienPaiementCree)}>Appuyez ici</Text>.
+                      <Text
+                        style={styles.lienTexte}
+                        onPress={() => Linking.openURL(lienPaiementCree).catch(() => {
+                          // Ce lien est le DERNIER repli (déjà après l'échec de l'ouverture
+                          // automatique) — s'il échoue aussi, le client doit le savoir
+                          // explicitement plutôt qu'un appui sans aucun effet visible.
+                          Alert.alert(
+                            "Impossible d'ouvrir la page de paiement",
+                            `Copiez ce lien dans votre navigateur :\n${lienPaiementCree}`
+                          );
+                        })}
+                      >
+                        Appuyez ici
+                      </Text>.
                     </Text>
                   ) : (
                     <Alerte type="avertissement" message="Le paiement en ligne n'est pas encore configuré — contactez-nous pour finaliser cette commande." style={styles.marginHaut} />
